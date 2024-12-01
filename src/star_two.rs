@@ -1,11 +1,12 @@
-use std::cmp;
+use std::collections::HashMap;
+
 use std::fs;
 
 pub fn run() {
-    let file = fs::read_to_string("./inputs/star_one.txt").unwrap();
+    let file = fs::read_to_string("./inputs/star_two.txt").unwrap();
     let input = file.lines();
     let parsed_input = parse_input(input);
-    let result = calculate_total_distance(parsed_input.0, parsed_input.1);
+    let result = calculate_similarity_score(parsed_input.0, parsed_input.1);
     println!("Result: {}", result);
 }
 
@@ -30,29 +31,24 @@ where
     (list_one, list_two)
 }
 
-fn calculate_total_distance(list_one: Vec<isize>, list_two: Vec<isize>) -> isize {
+fn calculate_similarity_score(list_one: Vec<isize>, list_two: Vec<isize>) -> isize {
     let mut result = 0;
-    let mut sorted_list_one = list_one.clone();
-    sorted_list_one.sort();
-    let mut sorted_list_two = list_two.clone();
-    sorted_list_two.sort();
+    let mut id_count = HashMap::new();
 
-    let mut i = 0;
+    for id in list_two.iter() {
+        let current_count = id_count.entry(id).or_insert(0);
+        *current_count += 1;
+    }
 
-    while i < cmp::min(sorted_list_one.len(), sorted_list_two.len()) {
-        let val_one = sorted_list_one[i];
-        let val_two = sorted_list_two[i];
-
-        let difference = match val_one > val_two {
-            true => val_one - val_two,
-            false => val_two - val_one,
+    for id in list_one.iter() {
+        let count = match id_count.get(id) {
+            Some(count) => *count,
+            None => 0,
         };
 
-        result += difference;
-
-        i += 1;
+        result += *id * count;
     }
-    
+
     result
 }
 
@@ -76,10 +72,10 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_total_distance() {
+    fn test_calculate_similarity_score() {
         let list_one = vec![3, 4, 2, 1, 3, 3];
         let list_two = vec![4, 3, 5, 3, 9, 3];
-        let result = calculate_total_distance(list_one, list_two);
-        assert_eq!(result, 11);
+        let result = calculate_similarity_score(list_one, list_two);
+        assert_eq!(result, 31);
     }
 }
