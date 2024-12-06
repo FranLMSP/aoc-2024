@@ -10,6 +10,7 @@ mod star_seven;
 mod star_eight;
 mod star_nine;
 mod star_ten;
+mod star_eleven;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -24,6 +25,7 @@ fn main() {
         "8" => star_eight::run(),
         "9" => star_nine::run(),
         "10" => star_ten::run(),
+        "11" => star_eleven::run(),
         _ => unreachable!(),
     }
 }
