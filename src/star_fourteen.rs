@@ -1,12 +1,13 @@
 use std::fs;
 
 pub fn run() {
-    let file = fs::read_to_string("./inputs/star_thirteen.txt").unwrap();
+    let file = fs::read_to_string("./inputs/star_fourteen.txt").unwrap();
     let result = process_input(file.lines());
 
     println!("Result: {}", result);
 }
 
+// result = 204976636995111
 fn process_input<'a, I>(str_lines: I) -> isize 
 where
     I: IntoIterator<Item = &'a str>
@@ -37,60 +38,80 @@ fn parse_formula(str_formula: &String) -> (isize, Vec<isize>) {
     (expected_result, nums)
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum Operator {
-    Mul,
     Sum,
+    Mul,
+    Concat,
 }
 
 fn compute_formula(expected_result: isize, operands: &Vec<isize>) -> Option<isize> {
-    let mut current_mask: u16 = 0b00000000;
-    let max_attempts = 2_usize.pow((operands.len() as u32) - 1);
+    let mut current_operators = initialize_operators(operands.len());
+    let max_attempts = 3_usize.pow((operands.len() as u32) - 1);
+
+    assert_eq!(current_operators.len(), operands.len());
 
     for _ in 0..max_attempts {
         let mut result = 0;
         let mut is_first = true;
 
-        let operators = mask_to_operators(current_mask, operands.len());
-
-        for (operand, operator) in operands.iter().zip(operators) {
+        for (operand, operator) in operands.iter().zip(&current_operators) {
             if is_first {
                 result = *operand;
                 is_first = false;
                 continue;
             }
             match operator {
-                Operator::Mul => {result *= *operand},
-                Operator::Sum => {result += *operand},
+                Operator::Mul => result *= *operand,
+                Operator::Sum => result += *operand,
+                Operator::Concat => result = format!("{}{}", result, *operand).parse().unwrap(),
             };
-        }
 
+            if result > expected_result {
+                break;
+            }
+        }
 
         if result == expected_result {
             return Some(result);
         }
 
-        current_mask += 1;
+        cycle_operators(&mut current_operators);
+
     }
 
     None
 }
 
-fn mask_to_operators(mask: u16, count: usize) -> Vec<Operator> {
-    let mut operators = vec![];
-    operators.push(Operator::Sum); // push dummy operator just so that the len matches with operands
-    let mut mask_temp = mask;
-    for _ in 0..count {
-        let operator = match mask_temp & 1 {
-            0 => Operator::Sum,
-            1 => Operator::Mul,
-            _ => unreachable!(),
-        };
-        operators.push(operator);
-        mask_temp >>= 1;
-    }
+fn initialize_operators(len: usize) -> Vec<Operator> {
+    vec![Operator::Sum; len]
+}
 
-    operators
+fn cycle_operators(operators: &mut Vec<Operator>) {
+    let mut is_done = false;
+    let mut current_index = 1;
+
+    // Sum = 0, Mul = 1, Concat = 2
+    while !is_done && current_index < operators.len() {
+        let operator = operators[current_index];
+        let new_operator = match operator {
+            Operator::Sum => Operator::Mul,
+            Operator::Mul => Operator::Concat,
+            Operator::Concat => Operator::Sum,
+        };
+
+        operators[current_index] = new_operator;
+
+        is_done = match operator {
+            Operator::Sum | Operator::Mul => true,
+            Operator::Concat => false,
+        };
+
+        if !is_done {
+            current_index += 1;
+        }
+
+    }
 }
 
 
@@ -111,18 +132,36 @@ mod tests {
             "21037: 9 7 18 13",
             "292: 11 6 16 20",
         ];
-        assert_eq!(process_input(input), 3749);
+        assert_eq!(process_input(input), 11387);
     }
+
+    #[test]
+    fn test_cycle_operators() {
+        let mut operators = vec![Operator::Sum, Operator::Sum, Operator::Sum];
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Mul, Operator::Sum]);
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Concat, Operator::Sum]);
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Sum, Operator::Mul]);
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Mul, Operator::Mul]);
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Concat, Operator::Mul]);
+        cycle_operators(&mut operators);
+        assert_eq!(operators, vec![Operator::Sum, Operator::Sum, Operator::Concat]);
+    }
+
 
     #[test]
     fn test_compute_formula() {
         assert_eq!(compute_formula(190, &vec![10, 19]), Some(190));
         assert_eq!(compute_formula(3267, &vec![81, 40, 27]), Some(3267));
         assert_eq!(compute_formula(83, &vec![17, 5]), None);
-        assert_eq!(compute_formula(156, &vec![15, 6]), None);
-        assert_eq!(compute_formula(7290, &vec![6, 8, 6, 15]), None);
+        assert_eq!(compute_formula(156, &vec![15, 6]), Some(156));
+        assert_eq!(compute_formula(7290, &vec![6, 8, 6, 15]), Some(7290));
         assert_eq!(compute_formula(161011, &vec![16, 10, 13]), None);
-        assert_eq!(compute_formula(192, &vec![17, 8, 14]), None);
+        assert_eq!(compute_formula(192, &vec![17, 8, 14]), Some(192));
         assert_eq!(compute_formula(21037, &vec![9, 7, 18, 13]), None);
         assert_eq!(compute_formula(292, &vec![11, 6, 16, 20]), Some(292));
     }
