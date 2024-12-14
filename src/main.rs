@@ -26,6 +26,7 @@ mod star_twenty_three;
 mod star_twenty_four;
 mod star_twenty_five;
 mod star_twenty_six;
+mod star_twenty_seven;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -56,6 +57,7 @@ fn main() {
         "24" => star_twenty_four::run(),
         "25" => star_twenty_five::run(),
         "26" => star_twenty_six::run(),
+        "27" => star_twenty_seven::run(),
         _ => unreachable!(),
     }
 }
