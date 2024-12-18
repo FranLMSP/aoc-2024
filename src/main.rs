@@ -33,6 +33,7 @@ mod star_thirty;
 mod star_thirty_one;
 mod star_thirty_two;
 mod star_thirty_three;
+mod star_thirty_four;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -70,6 +71,7 @@ fn main() {
         "31" => star_thirty_one::run(),
         "32" => star_thirty_two::run(),
         "33" => star_thirty_three::run(),
+        "34" => star_thirty_four::run(),
         _ => unreachable!(),
     }
 }
